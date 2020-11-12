@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="exercice.py" />
     <Compile Include="test_exercice.py" />
+    <Compile Include="utils\_fft_version_prof.py" />
     <Compile Include="utils\fft.py" />
     <Compile Include="utils\signals.py" />
     <Compile Include="utils\wav.py" />
