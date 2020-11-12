@@ -59,6 +59,7 @@ def build_spectrogram_animation(filename, fft_size, x_range=None, y_range=None):
 
 	# Création du graphe dans l'espace du haut.
 	graph = fig.add_subplot(gs[0, 0])
+	# TODO : Appliquer une échelle logarithmique à l'axe des X.
 	graph.set_xscale("log")
 	# TODO : Contraindre les valeurs des axes si `x_range` ou `y_range` ne sont pas vides.
 	if x_range is not None:
