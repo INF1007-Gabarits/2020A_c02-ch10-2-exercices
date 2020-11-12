@@ -24,6 +24,9 @@
   <ItemGroup>
     <Compile Include="exercice.py" />
     <Compile Include="test_exercice.py" />
+    <Compile Include="utils\fft.py" />
+    <Compile Include="utils\signals.py" />
+    <Compile Include="utils\wav.py" />
     <Compile Include="_exercice_version_prof.py" />
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="settings\" />
+    <Folder Include="utils\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
