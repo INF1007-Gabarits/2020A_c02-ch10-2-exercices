@@ -90,6 +90,13 @@ def convert_to_samples(bytes):
 	samples = int_samples.astype(float) / MAX_INT_SAMPLE_VALUE
 	return samples
 
+def save_to_wav_file(samples, filename, num_channels):
+	with wave.open(filename, "wb") as writer:
+		writer.setnchannels(num_channels)
+		writer.setsampwidth(2)
+		writer.setframerate(SAMPLING_FREQ)
+		writer.writeframes(convert_to_bytes(samples))
+
 def apply_fft(sig):
 	freq_axis = np.linspace(0, SAMPLING_FREQ//2, sig.size//2)
 	val_axis = np.abs(sp.fft.fft(sig)[:freq_axis.size]) / (sig.size / 2)
@@ -130,11 +137,30 @@ def main():
 		os.mkdir("output")
 	except:
 		pass
+	
+	# Un accord majeur (racine, tierce, quinte, octave) en intonation juste
+	root_freq = 220
+	root = sine(root_freq, 1, 2.0)
+	third = sine(root_freq * 5/4, 1, 2.0)
+	fifth = sine(root_freq * 3/2, 1, 2.0)
+	octave = sine(root_freq * 2, 1, 2.0)
+	notes = (root, third, fifth, octave)
+	block_chord = normalize(root + third + fifth + octave, 0.89)
+	arpeggio = normalize(np.concatenate([e[:len(e)//2] for e in notes]), 0.89)
+
+	save_to_wav_file(block_chord, "output/major_chord.wav", 1)
+	save_to_wav_file(arpeggio, "output/major_chord_arpeggio.wav", 1)
+
+	for note in notes:
+		y, x = apply_fft(note)
+		plt.plot(x, y)
+	plt.show()
 
 	with wave.open("data/stravinsky.wav", "rb") as reader:
 		data = reader.readframes(reader.getnframes())
-		samples = separate_channels(convert_to_samples(data), reader.getnchannels())[0]
-		ani = build_spectrogram_animation(samples, 2048, (20, 10_000), (0, 0.3))
+		channels = separate_channels(convert_to_samples(data), reader.getnchannels())
+		sig = normalize(channels[0] + channels[1], 0.89)
+		ani = build_spectrogram_animation(sig, 4096, (20, 10_000), (0, 0.2))
 		plt.show()
 
 if __name__ == "__main__":
