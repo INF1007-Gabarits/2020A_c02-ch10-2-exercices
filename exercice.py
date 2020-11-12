@@ -26,6 +26,7 @@ SAMPLING_FREQ = 44100
 
 
 def build_spectrogram_animation(filename, fft_size, x_range=None, y_range=None):
+	# Fonction qui se fait appelée périodiquement pour redissiner le graphique
 	def draw_frame(frame, fig, graph, line, spec):
 		global playing
 		if not playing:
@@ -47,20 +48,25 @@ def build_spectrogram_animation(filename, fft_size, x_range=None, y_range=None):
 		fig.canvas.draw()
 		fig.canvas.flush_events()
 
-	# 
+	# TODO: Charger le fichier, le mixer (en normalisant) et créer son spectrogramme. On utilse une fenêtre de Hanning (on passe "hann")
 	channels, fps = load_wav(filename)
 	sig = mix_signals(channels, 0.89)
 	spec = spectrogram(sig, fft_size, fps, "hann")
 
+	# Création de la figure en laissant de l'espace en bas pour des boutons (ou autres)
 	fig = plt.figure("Spectrogram")
 	gs = grid.GridSpec(2, 1, height_ratios=(6, 1), figure=fig)
 
+	# Création du graphe dans l'espace du haut.
 	graph = fig.add_subplot(gs[0, 0])
 	graph.set_xscale("log")
+	# TODO : Contraindre les valeurs des axes si `x_range` ou `y_range` ne sont pas vides.
 	if x_range is not None:
 		graph.set_xlim(*x_range)
 	if y_range is not None:
 		graph.set_ylim(*y_range)
+
+	# Création de la courbe qui va dessiner la FFT.
 	line = graph.plot([], [])[0]
 
 	refresh_period_ms = 1000 / (fps / fft_size)
@@ -74,7 +80,7 @@ def wait_and_play(filename):
 	playsound(filename, block=False)
 
 
-playing = False
+playing = False # Contrôle le départ du dessin et de la musique.
 
 
 def main():
