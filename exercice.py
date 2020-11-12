@@ -6,12 +6,19 @@ import wave
 import math
 import random
 from collections import deque
+import threading as th
+import time
 
 import numpy as np
 import scipy.fft, scipy.signal
 import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
+import matplotlib.widgets as wid
+import matplotlib.gridspec as grid
+import wx
+import pyo
+from playsound import playsound
 
 
 SAMPLING_FREQ = 44100 # Hertz, taux d'échantillonnage standard des CD
@@ -97,6 +104,15 @@ def save_to_wav_file(samples, filename, num_channels):
 		writer.setframerate(SAMPLING_FREQ)
 		writer.writeframes(convert_to_bytes(samples))
 
+def load_wav_and_merge(filename, norm_level):
+	with wave.open(filename, "rb") as reader:
+		data = reader.readframes(reader.getnframes())
+	channels = separate_channels(convert_to_samples(data), reader.getnchannels())
+	sig = channels[0]
+	for ch in channels[1:]:
+		sig += ch
+	return normalize(sig, norm_level)
+
 def apply_fft(sig):
 	freq_axis = np.linspace(0, SAMPLING_FREQ//2, sig.size//2)
 	val_axis = np.abs(sp.fft.fft(sig)[:freq_axis.size]) / (sig.size / 2)
@@ -109,8 +125,14 @@ def spectrogram(sig, fft_size, window=None):
 			subsignal *= sp.signal.get_window(window, subsignal.size)
 		yield apply_fft(subsignal)
 
-def build_spectrogram_animation(sig, fft_size, x_range=(0, SAMPLING_FREQ/2), y_range=(0, 1)):
-	def animate_spectrogram(frame, fig, graph, line, spec):
+def build_spectrogram_animation(filename, fft_size, x_range=None, y_range=None):
+	def draw_frame(frame, fig, graph, line, spec):
+		global playing
+		if not playing:
+			fig.canvas.draw()
+			fig.canvas.flush_events()
+			return
+
 		try:
 			y, x = next(spec)
 		except StopIteration:
@@ -122,14 +144,31 @@ def build_spectrogram_animation(sig, fft_size, x_range=(0, SAMPLING_FREQ/2), y_r
 		fig.canvas.draw()
 		fig.canvas.flush_events()
 
-	fig = plt.figure("spectro")
-	graph = fig.add_subplot(1, 1, 1)
-	graph.set_xscale("log")
-	graph.set_xlim(*x_range)
-	graph.set_ylim(*y_range)
-	line = graph.plot([], [])[0]
+	sig = load_wav_and_merge(filename, 0.89)
 	spec = spectrogram(sig, fft_size, "hann")
-	return anim.FuncAnimation(fig, animate_spectrogram, fargs=(fig, graph, line, spec), interval=1000/(SAMPLING_FREQ/fft_size))
+
+	fig = plt.figure("Spectrogram")
+	gs = grid.GridSpec(2, 1, height_ratios=(6, 1), figure=fig)
+
+	graph = fig.add_subplot(gs[0, 0])
+	graph.set_xscale("log")
+	if x_range is not None:
+		graph.set_xlim(*x_range)
+	if y_range is not None:
+		graph.set_ylim(*y_range)
+	line = graph.plot([], [])[0]
+
+	refresh_period_ms = 1000 / (SAMPLING_FREQ / fft_size)
+	return fig, anim.FuncAnimation(fig, draw_frame, fargs=(fig, graph, line, spec), interval=refresh_period_ms)
+
+def wait_and_play(filename):
+	global playing
+	while not playing:
+		time.sleep(0.01)
+	playsound(filename, block=False)
+
+
+playing = False
 
 
 def main():
@@ -156,12 +195,22 @@ def main():
 		plt.plot(x, y)
 	plt.show()
 
-	with wave.open("data/stravinsky.wav", "rb") as reader:
-		data = reader.readframes(reader.getnframes())
-		channels = separate_channels(convert_to_samples(data), reader.getnchannels())
-		sig = normalize(channels[0] + channels[1], 0.89)
-		ani = build_spectrogram_animation(sig, 4096, (20, 10_000), (0, 0.2))
-		plt.show()
+	wav_filename = "data/stravinsky.wav"
+
+	fig, ani = build_spectrogram_animation(wav_filename, 4096, (20, 10_000), (0, 0.2))
+
+	btn_pos = fig.add_axes([0.8, 0.05, 0.15, 0.10])
+	def start_play(event):
+		global playing
+		playing = True
+	btn = wid.Button(btn_pos, "START")
+	btn.on_clicked(start_play)
+
+	p = th.Thread(target=wait_and_play, args=(wav_filename,))
+	p.start()
+
+	plt.show()
+	p.join()
 
 if __name__ == "__main__":
 	main()
