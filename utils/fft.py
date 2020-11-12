@@ -25,17 +25,15 @@ def apply_fft(sig, sampling_rate):
 	#         - Valeurs réelles espacées uniformément
 	#         - Taille = moitié de la longueur du signal
 	#         - Première valeur = 0, dernière valeur = taux d'échantillonnage / 2 (fréquence de Nyquist du signal)
-	freq_axis = np.linspace(0, sampling_rate // 2, sig.size // 2)
 
 	# TODO: Créer l'axe de magnitude en appliquant une FFT.
 	#       On veut un axe ainsi :
 	#         - Même taille que l'axe de fréquence, donc on prend juste la première moitié des valeurs retournées par `scipy.fft.fft`, c'est-à-dire la partie réelle de la FFT.
 	#         - En valeurs absolues (les valeurs négatives sont des résultats déphasés)
 	#         - On normalise en divisant par la moitié du nombre d'échantillons (taille du signal)
-	mag_axis = np.abs(sp.fft.fft(sig)[:freq_axis.size]) / (sig.size / 2)
 
 	# On retourne les deux axes, avec l'axe de magnitude en premier
-	return mag_axis, freq_axis
+	pass
 
 def spectrogram(sig, fft_size, sampling_rate, window=None):
 	"""
@@ -58,12 +56,11 @@ def spectrogram(sig, fft_size, sampling_rate, window=None):
 	#    Les derniers éléments qui ne sont pas assez nombreux pour faire une tranche peuvent être ignorés.
 
 	# TODO: Pour chaque tranche :
-	for i in range(0, sig.size - sig.size % fft_size, fft_size):
 		# TODO : Extraire les échantillons de la tranche.
-		subsignal = sig[i:i+fft_size]
+		
 		# TODO : Appliquer la fenêtre (si `window` pas vide).
-		if window is not None:
-			subsignal *= sp.signal.get_window(window, subsignal.size)
+		
 		# TODO : Donner le résultat de la FFT sur la tranche.
-		yield apply_fft(subsignal, sampling_rate)
+		
+	pass
 
